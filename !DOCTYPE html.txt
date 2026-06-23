@@ -30,7 +30,7 @@
 
 <script>
     // 填入您在 LINE Developer 申請的 LIFF ID
-    const MY_LIFF_ID = '您的LIFF_ID'; 
+    const MY_LIFF_ID = '2010478658-9tG4EGb6'; 
     // 填入剛剛 Google Apps Script 部署後的 URL
     const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzu_o-Q8xReDcWAGoNa5gyE2BsjEsQQ-MfU4ZcgYgN0_ofhjLKNoqxDTrZpHshyWiA-/exec'; 
 
