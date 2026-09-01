@@ -1,154 +1,56 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>活動現場簽到系統</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            padding: 20px;
-            background-color: #f5f6fa;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        .card {
-            background: white;
-            padding: 40px 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            max-width: 360px;
-            width: 100%;
-            text-align: center;
-            box-sizing: border-box;
-            transition: all 0.3s ease;
-        }
-        .logo {
-            width: 80px;
-            height: 80px;
-            background-color: #2ecc71;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            margin: 0 auto 20px;
-            box-shadow: 0 6px 15px rgba(46, 204, 113, 0.3);
-        }
-        h2 {
-            margin: 0 0 10px;
-            color: #2c3e50;
-            font-size: 22px;
-        }
-        p {
-            color: #7f8c8d;
-            font-size: 14px;
-            line-height: 1.5;
-            margin: 0 0 25px;
-        }
-        .form-group {
-            text-align: left;
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            font-size: 13px;
-            color: #7f8c8d;
-            margin-bottom: 6px;
-            font-weight: bold;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-            outline: none;
-            transition: border 0.2s;
-        }
-        input[type="text"]:focus {
-            border-color: #2ecc71;
-        }
-        .user-box {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        .user-name {
-            font-size: 16px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        button {
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 14px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.2s ease;
-        }
-        button:active {
-            transform: scale(0.98);
-            background-color: #27ae60;
-        }
-        button:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        /* 成功畫面特有樣式 */
-        .success-bg {
-            background-color: #2ecc71 !important;
-            color: white !important;
-        }
-        .success-bg h2, .success-bg p {
-            color: white !important;
-        }
-        .success-logo {
-            background-color: white !important;
-            color: #2ecc71 !important;
-            font-size: 40px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>活動無紙化簽到</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .card { background: white; padding: 30px 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; }
+    h2 { margin-top: 0; color: #1DB446; font-size: 24px; }
+    .info-group { margin: 20px 0; text-align: left; }
+    label { font-size: 14px; color: #666; font-weight: bold; margin-bottom: 6px; display: block; }
+    input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: border 0.3s; }
+    input[type="text"]:focus { border-color: #1DB446; }
+    button { width: 100%; background-color: #1DB446; color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+    button:disabled { background-color: #ccc; }
+    #status-text { margin-top: 15px; font-size: 14px; color: #666; word-break: break-all; }
+    .success-icon { font-size: 60px; color: #1DB446; margin-bottom: 10px; }
+  </style>
 </head>
 <body>
 
 <div class="card" id="main-card">
-    <div class="logo" id="main-logo">✓</div>
-    <h2 id="main-title">活動無紙化簽到</h2>
-    <p id="status-text">正在讀取您的 LINE 帳號安全資訊...</p>
-    
-    <div id="info-box" style="display:none;">
-        <div class="user-box">
-            <span style="font-size: 11px; color: #95a5a6;">LINE 帳號暱稱：</span>
-            <span id="line-nickname" class="user-name">載入中...</span>
-        </div>
-        
-        <div class="form-group">
-            <label for="realname">請輸入您的真實姓名 <span style="color:red;">*</span></label>
-            <input type="text" id="realname" placeholder="請輸入姓名" required>
-        </div>
-        
-        <button id="btn-checkin" onclick="submitCheckIn()">確認報到</button>
+  <h2>活動無紙化簽到</h2>
+  
+  <div id="loading-state">
+    <p id="loading-text">正在讀取您的 LINE 帳號資訊...</p>
+  </div>
+
+  <div id="form-state" style="display: none;">
+    <div class="info-group">
+      <label>您的姓名：</label>
+      <input type="text" id="user-name" placeholder="請輸入您的真實姓名">
     </div>
+    <input type="hidden" id="user-id">
+    <button id="submit-btn" onclick="submitCheckin()">確認報到</button>
+  </div>
+
+  <div id="success-state" style="display: none;">
+    <div class="success-icon">✓</div>
+    <h3 style="color: #1DB446; margin: 0 0 10px 0;">報到成功！</h3>
+    <p style="color: #666; font-size: 14px;">感謝您的參與，請向工作人員出示此畫面。</p>
+  </div>
+
+  <div id="status-text"></div>
 </div>
 
 <script>
 // ================== 請在此填入您的參數 ==================
 const MY_LIFF_ID = '2010478658-U6kSmDVP'; 
-const GAS_WEB_APP_URL = '請確認此處有填入新GAS網址'; 
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxYRaMG0xjS2cwdHkD9H_tZaQBgQxe7I3F1Yoiryl7O9X-7uqn3KiwS56frw05NnM11/exec'; 
 // =======================================================
 
 async function initializeLiff() {
@@ -162,103 +64,53 @@ async function initializeLiff() {
     
     const profile = await liff.getProfile();
     document.getElementById('user-id').value = profile.userId;
-    document.getElementById('user-name').value = profile.displayName || '';
+    if (!document.getElementById('user-name').value) {
+      document.getElementById('user-name').value = profile.displayName || '';
+    }
     
     document.getElementById('loading-state').style.display = 'none';
     document.getElementById('form-state').style.display = 'block';
   } catch (err) {
-    // 強制彈出詳細錯誤代碼
-    alert('LIFF 初始化失敗！\n錯誤代碼：' + err.code + '\n錯誤訊息：' + err.message + '\n詳細：' + JSON.stringify(err));
+    alert('LIFF 初始化失敗！\n代碼：' + err.code + '\n訊息：' + err.message + '\n詳細：' + JSON.stringify(err));
     document.getElementById('loading-text').innerText = '載入失敗：' + (err.message || err);
+  }
+}
+
+async function submitCheckin() {
+  const name = document.getElementById('user-name').value.trim();
+  const userId = document.getElementById('user-id').value;
+  const btn = document.getElementById('submit-btn');
+  const status = document.getElementById('status-text');
+
+  if (!name) {
+    alert('請輸入姓名！');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = '處理中...';
+  status.innerText = '正在寫入簽到記錄...';
+
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ name: name, userId: userId })
+    });
+    
+    document.getElementById('form-state').style.display = 'none';
+    document.getElementById('success-state').style.display = 'block';
+    status.innerText = '';
+  } catch (error) {
+    alert('簽到失敗，請重新嘗試或洽工作人員！');
+    btn.disabled = false;
+    btn.innerText = '確認報到';
+    status.innerText = '發生錯誤，請重試。';
   }
 }
 
 window.onload = function() {
   initializeLiff();
 };
-
-    // 2. 送出簽到資料
-    async function submitCheckIn() {
-        const realNameInput = document.getElementById('realname').value.trim();
-        
-        // 防呆驗證：確保民眾有輸入姓名
-        if (!realNameInput) {
-            alert('請填寫您的真實姓名，謝謝！');
-            return;
-        }
-
-        const btn = document.getElementById('btn-checkin');
-        btn.disabled = true;
-        btn.innerText = '正在傳送報到資料...';
-
-        const payload = {
-            userId: userProfile.userId,
-            displayName: realNameInput // 這裡直接把民眾填寫的「真實姓名」送給 Excel 的 [LINE 暱稱] 欄位
-        };
-
-        try {
-            // 發送 POST 請求至 Google 試算表
-            const response = await fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            
-            if (result.status === 'success') {
-                // 【方式二核心修改】：不關閉視窗，直接在手機上顯示超精美的「報到成功畫面」
-                showSuccessScreen(realNameInput);
-            } else {
-                alert('報到失敗（後端錯誤），請聯繫現場工作人員協助。');
-                btn.disabled = false;
-                btn.innerText = '確認報到';
-            }
-        } catch (error) {
-            alert('網路連線失敗，請確認您的手機網路是否正常。');
-            btn.disabled = false;
-            btn.innerText = '確認報到';
-            console.error('連線錯誤:', error);
-        }
-    }
-
-    // 3. 轉化為成功簽到畫面的函式
-    function showSuccessScreen(name) {
-        const card = document.getElementById('main-card');
-        const logo = document.getElementById('main-logo');
-        const title = document.getElementById('main-title');
-        const statusText = document.getElementById('status-text');
-        const infoBox = document.getElementById('info-box');
-
-        // 隱藏輸入表單與按鈕
-        infoBox.style.display = 'none';
-
-        // 改變卡片顏色為精美滿版綠色，給予視覺回饋
-        card.classList.add('success-bg');
-        logo.classList.add('success-logo');
-        logo.innerHTML = '✓';
-
-        // 更改文字提示為大字體的成功資訊
-        title.innerHTML = '報到成功！';
-        
-        // 取得當前時間
-        const now = new Date();
-        const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-        
-        statusText.innerHTML = `
-            <div style="font-size: 18px; font-weight: bold; margin-bottom: 15px;">${name} 貴賓您好</div>
-            <p style="font-size: 15px; line-height: 1.6;">
-                您已於 <strong>${timeStr}</strong> 成功完成簽到！<br>
-                並且已加入<strong>【鹿谷鄉公所】</strong>官方帳號好友。<br><br>
-                請向現場工作人員出示此畫面引導進場。<br>
-                祝您今天活動愉快！
-            </p>
-            <div style="margin-top: 25px;">
-                <button onclick="liff.closeWindow()" style="background-color: white; color: #2ecc71; border: 1px solid white;">關閉視窗</button>
-            </div>
-        `;
-    }
-
-    // 啟動執行
-    initLiff();
 </script>
 </body>
 </html>
