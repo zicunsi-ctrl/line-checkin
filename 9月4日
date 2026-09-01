@@ -172,6 +172,7 @@
             }
         } catch (error) {
             document.getElementById('status-text').innerText = '系統讀取失敗，請在 LINE 軟體內開啟此連結。';
+            alert('LIFF錯誤詳細訊息: ' + JSON.stringify(err) + ' / ' + err.message);
             console.error('LIFF 初始化失敗:', error);
         }
     }
