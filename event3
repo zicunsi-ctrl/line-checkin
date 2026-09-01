@@ -56,7 +56,7 @@
 <script>
 // ================== 請填入本場次參數 ==================
 const MY_LIFF_ID = '2010478658-xfEDVGga'; 
-const GAS_WEB_APP_URL = '填入您的GAS網址'; 
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz0f02hQvPDUj8uqf1mZy_713nJYBdUWq51tstkmBlibowJUvsC4BKWrigI57L-LAPKgQ/exec'; 
 // ====================================================
 
 async function initializeLiff() {
