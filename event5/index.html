@@ -103,10 +103,10 @@ async function submitCheckin() {
 
   btn.disabled = true;
   btn.innerText = '處理中...';
-  status.innerText = '正在寫入簽到記錄...';
+  status.innerText = '正在核對簽到記錄...';
 
   try {
-    await fetch(GAS_WEB_APP_URL, {
+    const response = await fetch(GAS_WEB_APP_URL, {
       method: 'POST',
       body: JSON.stringify({
         displayName: displayName,
@@ -115,6 +115,17 @@ async function submitCheckin() {
       })
     });
     
+    const result = await response.json();
+    
+    if (result.status === 'duplicate') {
+      alert(result.message); // 跳出提示：您先前已經完成過報到囉！
+      btn.disabled = false;
+      btn.innerText = '確認報到';
+      status.innerText = '此帳號已報到過。';
+      return;
+    }
+    
+    // 首次簽到成功
     document.getElementById('form-state').style.display = 'none';
     document.getElementById('success-state').style.display = 'block';
     status.innerText = '';
