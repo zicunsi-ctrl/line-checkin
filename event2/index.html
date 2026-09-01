@@ -177,47 +177,57 @@
     }
 
     // 2. 送出簽到資料
-    async function submitCheckIn() {
-        const realNameInput = document.getElementById('realname').value.trim();
-        
-        // 防呆驗證：確保民眾有輸入姓名
-        if (!realNameInput) {
-            alert('請填寫您的真實姓名，謝謝！');
-            return;
-        }
+    async function submitCheckin() {
+  const displayName = document.getElementById('display-name').value.trim();
+  const email = document.getElementById('user-email').value.trim();
+  const userId = document.getElementById('user-id').value;
+  const btn = document.getElementById('submit-btn');
+  const status = document.getElementById('status-text');
 
-        const btn = document.getElementById('btn-checkin');
-        btn.disabled = true;
-        btn.innerText = '正在傳送報到資料...';
+  if (!displayName) {
+    alert('請確認 LINE 暱稱！');
+    return;
+  }
+  if (!email) {
+    alert('請輸入 Email 信箱！');
+    return;
+  }
 
-        const payload = {
-            userId: userProfile.userId,
-            displayName: realNameInput // 這裡直接把民眾填寫的「真實姓名」送給 Excel 的 [LINE 暱稱] 欄位
-        };
+  btn.disabled = true;
+  btn.innerText = '處理中...';
+  status.innerText = '正在核對簽到記錄...';
 
-        try {
-            // 發送 POST 請求至 Google 試算表
-            const response = await fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            
-            if (result.status === 'success') {
-                // 【方式二核心修改】：不關閉視窗，直接在手機上顯示超精美的「報到成功畫面」
-                showSuccessScreen(realNameInput);
-            } else {
-                alert('報到失敗（後端錯誤），請聯繫現場工作人員協助。');
-                btn.disabled = false;
-                btn.innerText = '確認報到';
-            }
-        } catch (error) {
-            alert('網路連線失敗，請確認您的手機網路是否正常。');
-            btn.disabled = false;
-            btn.innerText = '確認報到';
-            console.error('連線錯誤:', error);
-        }
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        displayName: displayName,
+        email: email,
+        userId: userId
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.status === 'duplicate') {
+      alert(result.message); // 跳出提示：您先前已經完成過報到囉！
+      btn.disabled = false;
+      btn.innerText = '確認報到';
+      status.innerText = '此帳號已報到過。';
+      return;
     }
+    
+    // 首次簽到成功
+    document.getElementById('form-state').style.display = 'none';
+    document.getElementById('success-state').style.display = 'block';
+    status.innerText = '';
+  } catch (error) {
+    alert('簽到失敗，請重試！');
+    btn.disabled = false;
+    btn.innerText = '確認報到';
+    status.innerText = '寫入失敗，請洽現場工作人員。';
+  }
+}
 
     // 3. 轉化為成功簽到畫面的函式
     function showSuccessScreen(name) {
