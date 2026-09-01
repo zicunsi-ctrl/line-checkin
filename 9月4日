@@ -147,7 +147,7 @@
 
 <script>
     // ================== 請在此填入您的參數 ==================
-    const MY_LIFF_ID = '2010478658-9tG4EGb6'; // 您的 LINE Login LIFF ID
+    const MY_LIFF_ID = '2010478658-U6kSmDVP'; // 您的 LINE Login LIFF ID
     const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxYRaMG0xjS2cwdHkD9H_tZaQBgQxe7I3F1Yoiryl7O9X-7uqn3KiwS56frw05NnM11/exec'; // 部署好的 Google Apps Script 網址
     // =======================================================
 
