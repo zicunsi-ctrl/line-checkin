@@ -146,36 +146,36 @@
 </div>
 
 <script>
-    // ================== 請在此填入您的參數 ==================
-    const MY_LIFF_ID = '2010478658-U6kSmDVP'; // 您的 LINE Login LIFF ID
-    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxYRaMG0xjS2cwdHkD9H_tZaQBgQxe7I3F1Yoiryl7O9X-7uqn3KiwS56frw05NnM11/exec'; // 部署好的 Google Apps Script 網址
-    // =======================================================
+// ================== 請在此填入您的參數 ==================
+const MY_LIFF_ID = '2010478658-U6kSmDVP'; 
+const GAS_WEB_APP_URL = '請確認此處有填入新GAS網址'; 
+// =======================================================
 
-    let userProfile = {};
-
-    // 1. 初始化 LINE LIFF SDK
-    async function initLiff() {
-        try {
-            await liff.init({ liffId: MY_LIFF_ID });
-            if (liff.isLoggedIn()) {
-                // 已登入：取得使用者 LINE Profile 資料
-                userProfile = await liff.getProfile();
-                document.getElementById('line-nickname').innerText = userProfile.displayName;
-                
-                // 自動把 LINE 暱稱帶入真實姓名框中，方便民眾修改
-                document.getElementById('realname').value = userProfile.displayName;
-                
-                document.getElementById('status-text').innerText = '請確認您的姓名，並點選下方按鈕完成簽到。';
-                document.getElementById('info-box').style.display = 'block';
-            } else {
-                liff.login();
-            }
-        } catch (error) {
-            document.getElementById('status-text').innerText = '系統讀取失敗，請在 LINE 軟體內開啟此連結。';
-            alert('LIFF錯誤詳細訊息: ' + JSON.stringify(err) + ' / ' + err.message);
-            console.error('LIFF 初始化失敗:', error);
-        }
+async function initializeLiff() {
+  try {
+    await liff.init({ liffId: MY_LIFF_ID });
+    
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
     }
+    
+    const profile = await liff.getProfile();
+    document.getElementById('user-id').value = profile.userId;
+    document.getElementById('user-name').value = profile.displayName || '';
+    
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('form-state').style.display = 'block';
+  } catch (err) {
+    // 強制彈出詳細錯誤代碼
+    alert('LIFF 初始化失敗！\n錯誤代碼：' + err.code + '\n錯誤訊息：' + err.message + '\n詳細：' + JSON.stringify(err));
+    document.getElementById('loading-text').innerText = '載入失敗：' + (err.message || err);
+  }
+}
+
+window.onload = function() {
+  initializeLiff();
+};
 
     // 2. 送出簽到資料
     async function submitCheckIn() {
