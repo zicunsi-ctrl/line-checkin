@@ -99,8 +99,11 @@ async function initializeLiff() {
     document.getElementById('loading-state').style.display = 'none';
     document.getElementById('form-state').style.display = 'block';
   } catch (err) {
-    alert('LIFF 初始化失敗！\n' + (err.message || JSON.stringify(err)));
-    document.getElementById('loading-text').innerText = '載入失敗，請重新整理。';
+    console.error(err);
+    document.getElementById('loading-text').innerHTML = 
+      '<span style="color:red; font-size:14px; word-break:break-all;">' +
+      '載入失敗原因：<br>' + (err.code ? '[' + err.code + '] ' : '') + (err.message || JSON.stringify(err)) +
+      '</span>';
   }
 }
 
