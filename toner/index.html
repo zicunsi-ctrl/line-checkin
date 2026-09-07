@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>碳粉匣領取登記</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .card { background: white; padding: 32px 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; }
+    h2 { margin-top: 0; color: #2c3e50; font-size: 22px; }
+    .info-group { margin: 18px 0; text-align: left; }
+    label { font-size: 14px; color: #444; font-weight: bold; margin-bottom: 8px; display: block; }
+    input[type="text"], select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background: white; }
+    input:focus, select:focus { border-color: #2980b9; }
+    button { width: 100%; background-color: #2980b9; color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+    button:disabled { background-color: #ccc; }
+    .success-icon { font-size: 56px; color: #27ae60; margin-bottom: 10px; }
+    #status-text { margin-top: 15px; font-size: 14px; color: #666; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>🖨️ 碳粉匣領取登記</h2>
+  
+  <div id="loading-state">
+    <p id="loading-text">正在讀取您的 LINE 身分...</p>
+  </div>
+
+  <div id="form-state" style="display: none;">
+    <div class="info-group">
+      <label>領取人員：</label>
+      <input type="text" id="display-name" placeholder="請確認姓名">
+    </div>
+
+    <!-- 機器設備 下拉選單 -->
+    <div class="info-group">
+      <label>欲更換的機器設備：</label>
+      <select id="printer-select">
+        <option value="">-- 請選擇設備 / 位置 --</option>
+        <option value="1號機 (1F 總務辦公室)">1號機 (1F 總務辦公室)</option>
+        <option value="2號機 (2F 研發部)">2號機 (2F 研發部)</option>
+        <option value="3號機 (3F 會議室)">3號機 (3F 會議室)</option>
+        <option value="4號機 (4F 行銷處)">4號機 (4F 行銷處)</option>
+      </select>
+    </div>
+
+    <!-- 碳粉顏色 下拉選單 -->
+    <div class="info-group">
+      <label>領取的碳粉匣顏色：</label>
+      <select id="color-select">
+        <option value="">-- 請選擇碳粉顏色 --</option>
+        <option value="黑色 (Black - K)">⚫ 黑色 (Black - K)</option>
+        <option value="藍色 (Cyan - C)">🔵 藍色 (Cyan - C)</option>
+        <option value="紅色 (Magenta - M)">🔴 紅色 (Magenta - M)</option>
+        <option value="黃色 (Yellow - Y)">🟡 黃色 (Yellow - Y)</option>
+      </select>
+    </div>
+
+    <input type="hidden" id="user-id">
+    <button id="submit-btn" onclick="submitTonerLog()">確認領取登記</button>
+  </div>
+
+  <div id="success-state" style="display: none;">
+    <div class="success-icon">✓</div>
+    <h3 style="color: #27ae60; margin: 0 0 10px 0;">登記成功！</h3>
+    <p style="color: #444; font-size: 15px;" id="summary-text"></p>
+    <p style="color: #888; font-size: 13px; margin-top: 15px;">請從備用耗材櫃取用對應碳粉匣。</p>
+  </div>
+
+  <div id="status-text"></div>
+</div>
+
+<script>
+// ================== 請填入本系統參數 ==================
+const MY_LIFF_ID = '填入步驟2取得的LIFF_ID'; 
+const GAS_WEB_APP_URL = '填入步驟1取得的GAS網址'; 
+// ====================================================
+
+async function initializeLiff() {
+  try {
+    await liff.init({ liffId: MY_LIFF_ID });
+    
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    
+    try {
+      const profile = await liff.getProfile();
+      document.getElementById('user-id').value = profile.userId || '';
+      document.getElementById('display-name').value = profile.displayName || '';
+    } catch (profileErr) {
+      console.warn('無法取得 Profile:', profileErr);
+    }
+    
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('form-state').style.display = 'block';
+  } catch (err) {
+    alert('LIFF 初始化失敗！\n' + (err.message || JSON.stringify(err)));
+    document.getElementById('loading-text').innerText = '載入失敗，請重新整理。';
+  }
+}
+
+async function submitTonerLog() {
+  const displayName = document.getElementById('display-name').value.trim();
+  const printer = document.getElementById('printer-select').value;
+  const color = document.getElementById('color-select').value;
+  const userId = document.getElementById('user-id').value;
+  const btn = document.getElementById('submit-btn');
+  const status = document.getElementById('status-text');
+
+  if (!displayName) {
+    alert('請確認領取人姓名！');
+    return;
+  }
+  if (!printer) {
+    alert('請選擇機器設備！');
+    return;
+  }
+  if (!color) {
+    alert('請選擇碳粉匣顏色！');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = '登記中...';
+  status.innerText = '正在寫入領取紀錄...';
+
+  try {
+    await fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        displayName: displayName,
+        printer: printer,
+        color: color,
+        userId: userId
+      })
+    });
+    
+    document.getElementById('form-state').style.display = 'none';
+    document.getElementById('summary-text').innerText = `已登記：${printer} ➔ 【${color}】`;
+    document.getElementById('success-state').style.display = 'block';
+    status.innerText = '';
+  } catch (error) {
+    alert('登記失敗，請重試！');
+    btn.disabled = false;
+    btn.innerText = '確認領取登記';
+    status.innerText = '寫入失敗，請檢查網路連線。';
+  }
+}
+
+window.onload = initializeLiff;
+</script>
+</body>
+</html>
