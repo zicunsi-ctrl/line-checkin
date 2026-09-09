@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文宣摺頁領取登記</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .card { background: white; padding: 32px 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; }
+    h2 { margin-top: 0; color: #2c3e50; font-size: 22px; }
+    .user-greeting { font-size: 15px; color: #555; background: #eef2f7; padding: 10px 14px; border-radius: 8px; margin-bottom: 20px; text-align: left; }
+    .info-group { margin: 18px 0; text-align: left; }
+    label { font-size: 14px; color: #444; font-weight: bold; margin-bottom: 8px; display: block; }
+    select, input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background: white; }
+    input[disabled] { background-color: #f0f0f0; color: #555; font-weight: bold; cursor: not-allowed; }
+    select:focus { border-color: #2980b9; }
+    button { width: 100%; background-color: #2980b9; color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+    button:disabled { background-color: #ccc; }
+    .success-icon { font-size: 56px; color: #27ae60; margin-bottom: 10px; }
+    #status-text { margin-top: 15px; font-size: 14px; color: #666; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>📄 文宣摺頁領取登記</h2>
+  
+  <div id="loading-state">
+    <p id="loading-text">正在驗證您的 LINE 身分...</p>
+  </div>
+
+  <div id="form-state" style="display: none;">
+    <div class="user-greeting">
+      領取人員：<strong id="user-display" style="color: #2980b9;"></strong>
+    </div>
+
+    <!-- 13村下拉選單 -->
+    <div class="info-group">
+      <label>請選擇領取村別：</label>
+      <select id="village-select">
+        <option value="">-- 請選擇村別 --</option>
+        <option value="鹿谷村">鹿谷村</option>
+        <option value="廣興村">廣興村</option>
+        <option value="彰雅村">彰雅村</option>
+        <option value="內湖村">內湖村</option>
+        <option value="和雅村">和雅村</option>
+        <option value="竹林村">竹林村</option>
+        <option value="竹豐村">竹豐村</option>
+        <option value="永隆村">永隆村</option>
+        <option value="鳳凰村">鳳凰村</option>
+        <option value="初鄉村">初鄉村</option>
+        <option value="秀峰村">秀峰村</option>
+        <option value="清水村">清水村</option>
+        <option value="瑞田村">瑞田村</option>
+      </select>
+    </div>
+
+    <!-- 領取數量（鎖定 1000 份） -->
+    <div class="info-group">
+      <label>領取數量：</label>
+      <input type="text" value="1,000 份" disabled>
+    </div>
+
+    <button id="submit-btn" onclick="submitFlyerLog()">確認領取登記</button>
+  </div>
+
+  <div id="success-state" style="display: none;">
+    <div class="success-icon">✓</div>
+    <h3 style="color: #27ae60; margin: 0 0 10px 0;">登記成功！</h3>
+    <p style="color: #444; font-size: 15px; white-space: pre-line;" id="summary-text"></p>
+    <p style="color: #888; font-size: 13px; margin-top: 15px;">已完成領取手續，感謝您的配合。</p>
+  </div>
+
+  <div id="status-text"></div>
+</div>
+
+<script>
+// ================== 請填入本系統參數 ==================
+const MY_LIFF_ID = '2010478658-ePtBVEAK'; 
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxAYvPwFkG1W0nVdgbCkxj6Q8ciNJtUxCOFcmpakufCl6nLH6OncVbX9DG2qd7utgixcw/exec'; 
+// ====================================================
+
+let currentUserProfile = { displayName: '', userId: '' };
+
+async function initializeLiff() {
+  try {
+    await liff.init({ liffId: MY_LIFF_ID });
+    
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    
+    const profile = await liff.getProfile();
+    currentUserProfile.displayName = profile.displayName || 'LINE 用戶';
+    currentUserProfile.userId = profile.userId || '';
+
+    document.getElementById('user-display').innerText = currentUserProfile.displayName;
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('form-state').style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loading-text').innerText = '載入失敗，請確認在 LINE 內開啟或重新整理。';
+  }
+}
+
+async function submitFlyerLog() {
+  const village = document.getElementById('village-select').value;
+  const btn = document.getElementById('submit-btn');
+  const status = document.getElementById('status-text');
+
+  if (!village) {
+    alert('請選擇村別！');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = '登記中...';
+  status.innerText = '正在寫入資料庫...';
+
+  try {
+    await fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        displayName: currentUserProfile.displayName,
+        village: village,
+        quantity: 1000,
+        userId: currentUserProfile.userId
+      })
+    });
+    
+    document.getElementById('form-state').style.display = 'none';
+    document.getElementById('summary-text').innerText = `${currentUserProfile.displayName} 代表【${village}】\n已完成領取 1,000 份摺頁！`;
+    document.getElementById('success-state').style.display = 'block';
+    status.innerText = '';
+  } catch (error) {
+    alert('登記失敗，請檢查網路連線後重試！');
+    btn.disabled = false;
+    btn.innerText = '確認領取登記';
+    status.innerText = '寫入失敗，請稍後再試。';
+  }
+}
+
+window.onload = initializeLiff;
+</script>
+</body>
+</html>
