@@ -16,8 +16,14 @@
     .user-greeting { font-size: 15px; color: #555; background: #eef2f7; padding: 10px 14px; border-radius: 8px; margin-bottom: 20px; text-align: left; }
     .info-group { margin: 18px 0; text-align: left; }
     label { font-size: 14px; color: #444; font-weight: bold; margin-bottom: 8px; display: block; }
-    select, input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background: white; }
-    select:focus, input[type="text"]:focus { border-color: #2980b9; }
+    select, input[type="date"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background: white; }
+    select:focus, input[type="date"]:focus { border-color: #2980b9; }
+
+    /* 勾選時段區塊美化 */
+    .checkbox-container { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+    .checkbox-label { display: flex; align-items: center; font-weight: normal; font-size: 15px; color: #333; cursor: pointer; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .checkbox-label input[type="checkbox"] { width: 18px; height: 18px; margin-right: 10px; accent-color: #2980b9; cursor: pointer; }
+
     button { width: 100%; color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; }
     .btn-borrow { background-color: #2980b9; }
     .btn-return { background-color: #27ae60; }
@@ -65,15 +71,32 @@
         </select>
       </div>
 
+      <!-- 借用日期選擇（預設當天） -->
       <div class="info-group">
-        <label>使用事由 / 備註（選填）：</label>
-        <input type="text" id="memo-input" placeholder="例：籌備會議、業務簡報">
+        <label>借用日期：</label>
+        <input type="date" id="date-input">
+      </div>
+
+      <!-- 借用時段勾選（多選） -->
+      <div class="info-group">
+        <label>借用時段（可複選）：</label>
+        <div class="checkbox-container">
+          <label class="checkbox-label">
+            <input type="checkbox" name="time-slot" value="上午(08:00-12:00)"> 上午 (08:00 - 12:00)
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" name="time-slot" value="下午(13:30-17:30)"> 下午 (13:30 - 17:30)
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" name="time-slot" value="晚上(18:00-21:00)"> 晚上 (18:00 - 21:00)
+          </label>
+        </div>
       </div>
     </div>
 
     <!-- 歸還專屬說明區塊 -->
     <div id="return-fields" style="display: none; margin: 20px 0; font-size: 15px; color: #555;">
-      📌 請將鎖匙交還研考後，點擊下方按鈕完成歸還登記。
+      📌 請將鎖匙歸還研考後，點擊下方按鈕完成歸還登記。
     </div>
 
     <button id="submit-btn" onclick="submitLog()"></button>
@@ -106,6 +129,10 @@ function initMode() {
   const borrowFields = document.getElementById('borrow-fields');
   const returnFields = document.getElementById('return-fields');
   const btn = document.getElementById('submit-btn');
+
+  // 設定預設日期為今天
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('date-input').value = today;
 
   if (action === 'return') {
     currentMode = 'return';
@@ -152,14 +179,33 @@ async function initializeLiff() {
 async function submitLog() {
   const isBorrow = (currentMode === 'borrow');
   const unit = document.getElementById('unit-select').value;
-  const memo = document.getElementById('memo-input').value.trim();
+  const dateVal = document.getElementById('date-input').value;
   const btn = document.getElementById('submit-btn');
   const status = document.getElementById('status-text');
 
-  if (isBorrow && !unit) {
-    alert('請選擇借用單位！');
-    return;
+  // 抓取有被勾選的時段
+  const selectedSlots = [];
+  document.querySelectorAll('input[name="time-slot"]:checked').forEach(cb => {
+    selectedSlots.push(cb.value);
+  });
+
+  if (isBorrow) {
+    if (!unit) {
+      alert('請選擇借用單位！');
+      return;
+    }
+    if (!dateVal) {
+      alert('請選擇借用日期！');
+      return;
+    }
+    if (selectedSlots.length === 0) {
+      alert('請至少勾選一個借用時段（上午、下午或晚上）！');
+      return;
+    }
   }
+
+  // 將日期與勾選時段組合成字串，例如：2026-09-10 [上午(08:00-12:00), 下午(13:30-17:30)]
+  const dateTimeSummary = isBorrow ? `${dateVal} 【${selectedSlots.join('、')}】` : '';
 
   btn.disabled = true;
   btn.innerText = '登記中...';
@@ -172,14 +218,14 @@ async function submitLog() {
         displayName: currentUserProfile.displayName,
         action: isBorrow ? '借出' : '歸還',
         unit: isBorrow ? unit : '（歸還回庫）',
-        memo: isBorrow ? memo : '',
+        dateTime: dateTimeSummary, // 傳送日期與勾選時段
         userId: currentUserProfile.userId
       })
     });
     
     document.getElementById('form-state').style.display = 'none';
     const detailMsg = isBorrow 
-      ? `【${unit}】已登記借出【研討室鎖匙】！` 
+      ? `【${unit}】已登記借出【研討室鎖匙】！\n使用時段：${dateTimeSummary}` 
       : `【研討室鎖匙】已完成歸還！`;
     document.getElementById('summary-text').innerText = `${currentUserProfile.displayName} 您好：\n${detailMsg}`;
     document.getElementById('success-state').style.display = 'block';
