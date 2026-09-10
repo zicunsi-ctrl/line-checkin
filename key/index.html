@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>研討室鎖匙登記</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .card { background: white; padding: 32px 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; }
+    h2 { margin-top: 0; color: #2c3e50; font-size: 22px; }
+    .badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 15px; margin-bottom: 15px; }
+    .badge-borrow { background-color: #e8f4fd; color: #2980b9; border: 1px solid #b8daff; }
+    .badge-return { background-color: #e8f8f0; color: #27ae60; border: 1px solid #c3e6cb; }
+    .user-greeting { font-size: 15px; color: #555; background: #eef2f7; padding: 10px 14px; border-radius: 8px; margin-bottom: 20px; text-align: left; }
+    .info-group { margin: 18px 0; text-align: left; }
+    label { font-size: 14px; color: #444; font-weight: bold; margin-bottom: 8px; display: block; }
+    select, input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background: white; }
+    select:focus, input[type="text"]:focus { border-color: #2980b9; }
+    button { width: 100%; color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+    .btn-borrow { background-color: #2980b9; }
+    .btn-return { background-color: #27ae60; }
+    button:disabled { background-color: #ccc; }
+    .success-icon { font-size: 56px; color: #27ae60; margin-bottom: 10px; }
+    #status-text { margin-top: 15px; font-size: 14px; color: #666; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>🔑 研討室鎖匙管理</h2>
+  <div id="mode-badge" class="badge"></div>
+  
+  <div id="loading-state">
+    <p id="loading-text">正在驗證您的 LINE 身分...</p>
+  </div>
+
+  <div id="form-state" style="display: none;">
+    <div class="user-greeting">
+      登記人員：<strong id="user-display" style="color: #2980b9;"></strong>
+    </div>
+
+    <!-- 借出專屬區塊 -->
+    <div id="borrow-fields">
+      <!-- 14個課室所下拉選單 -->
+      <div class="info-group">
+        <label>借用單位：</label>
+        <select id="unit-select">
+          <option value="">-- 請選擇借用課室所 --</option>
+          <option value="鄉長室">鄉長室</option>
+          <option value="秘書室">秘書室</option>
+          <option value="民政課">民政課</option>
+          <option value="財政課">財政課</option>
+          <option value="社會課">社會課</option>
+          <option value="工務課">工務課</option>
+          <option value="農經課">農經課</option>
+          <option value="主計室">主計室</option>
+          <option value="人事室">人事室</option>
+          <option value="政風室">政風室</option>
+          <option value="圖書館">圖書館</option>
+          <option value="幼兒園">幼兒園</option>
+          <option value="清潔隊">清潔隊</option>
+          <option value="觀光服務所">觀光服務所</option>
+        </select>
+      </div>
+
+      <div class="info-group">
+        <label>使用事由 / 備註（選填）：</label>
+        <input type="text" id="memo-input" placeholder="例：籌備會議、業務簡報">
+      </div>
+    </div>
+
+    <!-- 歸還專屬說明區塊 -->
+    <div id="return-fields" style="display: none; margin: 20px 0; font-size: 15px; color: #555;">
+      📌 請將鎖匙交還研考後，點擊下方按鈕完成歸還登記。
+    </div>
+
+    <button id="submit-btn" onclick="submitLog()"></button>
+  </div>
+
+  <div id="success-state" style="display: none;">
+    <div class="success-icon">✓</div>
+    <h3 style="color: #27ae60; margin: 0 0 10px 0;">登記成功！</h3>
+    <p style="color: #444; font-size: 15px; white-space: pre-line;" id="summary-text"></p>
+    <p style="color: #888; font-size: 13px; margin-top: 15px;">記錄已完成寫入，謝謝配合！</p>
+  </div>
+
+  <div id="status-text"></div>
+</div>
+
+<script>
+// ================== 請填入本系統參數 ==================
+const MY_LIFF_ID = '2010478658-gOVH3EeR'; 
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzMJdTMvF4cDU0oZdSsf3pKukdupn6zl8Nk5uMW-GG9ZMBeyUaFxAguhf2p69UShJqo/exec'; 
+// ====================================================
+
+let currentUserProfile = { displayName: '', userId: '' };
+let currentMode = 'borrow';
+
+function initMode() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const action = urlParams.get('action');
+  
+  const badge = document.getElementById('mode-badge');
+  const borrowFields = document.getElementById('borrow-fields');
+  const returnFields = document.getElementById('return-fields');
+  const btn = document.getElementById('submit-btn');
+
+  if (action === 'return') {
+    currentMode = 'return';
+    badge.className = 'badge badge-return';
+    badge.innerText = '📥 鎖匙歸還程序';
+    borrowFields.style.display = 'none';
+    returnFields.style.display = 'block';
+    btn.className = 'btn-return';
+    btn.innerText = '確認歸還鎖匙';
+  } else {
+    currentMode = 'borrow';
+    badge.className = 'badge badge-borrow';
+    badge.innerText = '🔑 鎖匙借用程序';
+    borrowFields.style.display = 'block';
+    returnFields.style.display = 'none';
+    btn.className = 'btn-borrow';
+    btn.innerText = '確認借出鎖匙';
+  }
+}
+
+async function initializeLiff() {
+  initMode();
+  try {
+    await liff.init({ liffId: MY_LIFF_ID });
+    
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    
+    const profile = await liff.getProfile();
+    currentUserProfile.displayName = profile.displayName || 'LINE 用戶';
+    currentUserProfile.userId = profile.userId || '';
+
+    document.getElementById('user-display').innerText = currentUserProfile.displayName;
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('form-state').style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loading-text').innerText = '載入失敗，請在 LINE 內開啟或重新整理。';
+  }
+}
+
+async function submitLog() {
+  const isBorrow = (currentMode === 'borrow');
+  const unit = document.getElementById('unit-select').value;
+  const memo = document.getElementById('memo-input').value.trim();
+  const btn = document.getElementById('submit-btn');
+  const status = document.getElementById('status-text');
+
+  if (isBorrow && !unit) {
+    alert('請選擇借用單位！');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = '登記中...';
+  status.innerText = '正在寫入系統...';
+
+  try {
+    await fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        displayName: currentUserProfile.displayName,
+        action: isBorrow ? '借出' : '歸還',
+        unit: isBorrow ? unit : '（歸還回庫）',
+        memo: isBorrow ? memo : '',
+        userId: currentUserProfile.userId
+      })
+    });
+    
+    document.getElementById('form-state').style.display = 'none';
+    const detailMsg = isBorrow 
+      ? `【${unit}】已登記借出【研討室鎖匙】！` 
+      : `【研討室鎖匙】已完成歸還！`;
+    document.getElementById('summary-text').innerText = `${currentUserProfile.displayName} 您好：\n${detailMsg}`;
+    document.getElementById('success-state').style.display = 'block';
+    status.innerText = '';
+  } catch (error) {
+    alert('登記失敗，請檢查網路連線重試！');
+    btn.disabled = false;
+    btn.innerText = isBorrow ? '確認借出鎖匙' : '確認歸還鎖匙';
+    status.innerText = '寫入失敗，請稍後再試。';
+  }
+}
+
+window.onload = initializeLiff;
+</script>
+</body>
+</html>
