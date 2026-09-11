@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>會議室簽到</title>
-  <!-- 載入 LINE LIFF SDK -->
+  <title>會議室現場簽到</title>
+  <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -24,17 +24,19 @@
     <div id="userArea" style="display:none;">
       <img id="userPicture" class="avatar" src="" alt="">
       <h2 id="userName"></h2>
-      <p>請確認已連上會議室 Wi-Fi 後點擊下方按鈕</p>
+      <p>請確認已連上現場 Wi-Fi 後點擊下方按鈕</p>
       <button id="checkinBtn" class="btn" onclick="submitCheckin()">立即簽到</button>
     </div>
     <div id="statusMsg"></div>
   </div>
 
   <script>
-    // === 請替換以下兩個設定值 ===
-    const MY_LIFF_ID = "2010478658-NJjo0PXT"; 
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpIaRzFVuvZsi8UXIvShw4KKwGpMTLgRfqKL3NE__Ry3tsmmE28lsS4_LzVmE1j_nzGg/exec"; 
-    // ===========================
+    // ==========================================
+    // 請將雙引號內的內容替換成您的設定值（保留引號）
+    // ==========================================
+    const MY_LIFF_ID = "2010478658-NJjo0PXT";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpIaRzFVuvZsi8UXIvShw4KKwGpMTLgRfqKL3NE__Ry3tsmmE28lsS4_LzVmE1j_nzGg/exec";
+    // ==========================================
 
     let userProfile = null;
 
